@@ -25,14 +25,16 @@ struct Pessoa {
 
 // pointer to struct Pessoa 
 void inserir(Pessoa *p) {  
+    // avoid the ENTER key to be read in the next fgets
+    setbuf(stdin, NULL);
     // clean console
     system("cls");
     printf("Digite o nome: ");
-    scanf("%s", p->nome);
+    fgets(p->nome, 30, stdin);
     printf("Digite o sobrenome: ");
-    scanf("%s", p->sobrenome);
+    fgets(p->sobrenome, 30, stdin);
     printf("Digite o CPF: ");
-    scanf("%s", p->cpf);
+    fgets(p->cpf, 11, stdin);
     printf("Digite a idade: ");
     scanf("%d", &p->idade);
 }
@@ -74,44 +76,76 @@ int main() {
         fread(&qtdPessoas, sizeof(int), 1, arq);
         // realoca o vetor de pessoas.  
         pessoas = (Pessoa*) realloc(pessoas, qtdPessoas * sizeof(Pessoa));
+        // check if the reallocation was successful
+        if (pessoas == NULL) {
+            printf("Erro ao realocar o vetor de pessoas!\n");
+            system("pause");
+            return 0;
+        }
         // le o vetor de pessoas do arquivo.
         fread(pessoas, sizeof(Pessoa), qtdPessoas, arq);
         fclose(arq);
+    } else {
+        // if error when opening the file
+        printf("Erro ao abrir o arquivo!\n");
+        system("pause");        
     }
 
     do {
+        // clean console
+        system("cls");
         imprimirMenu();
         scanf("%d", &opcao);
         switch (opcao) {
             case 1:
-                // realoca o vetor de pessoas. 
+                // reallocate the vector of people to add a new record  
                 pessoas = (Pessoa*) realloc(pessoas, (qtdPessoas + 1) * sizeof(Pessoa));
-                // insere a pessoa no vetor de pessoas.
-                inserir(&pessoas);
+                // check if the reallocation was successful
+                if (pessoas == NULL) {
+                    printf("Erro ao realocar o vetor de pessoas!\n");
+                    system("pause");
+                    return 0;
+                } 
+                // add a new record in the end of the vector
+                inserir(&pessoas[qtdPessoas]);
                 qtdPessoas++;
                 break;
             case 2:
-                for (int i = 0; i < qtdPessoas; i++) {
-                    printf("Nome: %s\n", pessoas[i].nome);
-                    printf("Sobrenome: %s\n", pessoas[i].sobrenome);
-                    printf("CPF: %s\n", pessoas[i].cpf);
-                    printf("Idade: %d\n", pessoas[i].idade);
-                    printf("\n\n");
+                setbuf(stdin, NULL);
+                // clean console
+                system("cls");
+                // print the records
+                // if there is not records
+                if (qtdPessoas == 0) {
+                    printf("Zero registros!\n");
+                } else {
+                    for (int i = 0; i < qtdPessoas; i++) {
+                        printf("Nome: %s\n", pessoas[i].nome);
+                        printf("Sobrenome: %s\n", pessoas[i].sobrenome);
+                        printf("CPF: %s\n", pessoas[i].cpf);
+                        printf("Idade: %d\n", pessoas[i].idade);
+                        printf("\n\n");
+                    }
                 }
+                // pause the console after print the records and wait for the user to press any key
+                system("pause");                                                               
                 break;
             case 3:
+                // delete all records from the file
                 deletar();
                 qtdPessoas = 0;
-                pessoas = (Pessoa*) realloc(pessoas, qtdPessoas * sizeof(Pessoa));
                 break;
             case 0:
+                // save the records in the DADOS.BIN File and close the file and the program
                 arq = fopen("DADOS.BIN", "wb");
+                // save the records in the file 
                 fwrite(&qtdPessoas, sizeof(int), 1, arq);
                 fwrite(pessoas, sizeof(Pessoa), qtdPessoas, arq);
                 fclose(arq);
+                free(pessoas);
                 break;
             default:
-                printf("Opcao invalida!\n");
+                printf("Opção invalida!\n");
                 break;
         }
     } while (opcao != 0);
